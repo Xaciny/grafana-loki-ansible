@@ -1,0 +1,10 @@
+all:
+  children:
+    grafana:
+      hosts:
+        master:
+          ansible_host: 192.168.100.1
+          role: master
+        replica:
+          ansible_host: 192.168.100.2
+          role: replica
