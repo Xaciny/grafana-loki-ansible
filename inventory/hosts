@@ -1,0 +1,3 @@
+[grafana]
+grafana_master ansible_host=ip_master
+grafana_slave ansible_host=ip_slave
