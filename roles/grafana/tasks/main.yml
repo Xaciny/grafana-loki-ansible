@@ -1,9 +1,36 @@
-- name: SET VARS 
+#- name: SET VARS 
+- name: SET VARS
+  set_fact:
+    base_dir: /opt/grafana/
 
-- name: COPY REMOTE J2 CONFIG
+#- name: Delete GrafanaDir
+#  shell: rm -rf /opt/grafana/*
+#   run_once: true
 
-- name: TEST IF DOCKER RUN
 
-- name: IF DOCKER RUN - DOCKER COMPOSE DOWN 
+##- name: COPY REMOTE J2 CONFIG
+- name: CREATE DIRECTORIES
+  shell: mkdir -p /opt/grafana/pgsql && mkdir -p  /opt/grafana/loki/config
+  # run_once: true
+  ignore_errors: true 
 
-- name: DOCKER COMPOSE UP
+##- name: TEST IF DOCKER RUN
+- name: COPY TEMPLATES
+  template: 
+    src: "{{item}}.j2"
+    dest: "{{base_dir}}{{item}}"
+  loop: 
+    - "docker-compose.yml"
+    - "pgsql/init_sql.conf"
+    - "loki/config/loki-config.yaml"
+##- name: IF DOCKER RUN - DOCKER COMPOSE DOWN 
+- name: CONTAINER DOWN
+  command: docker-compose down
+  args:
+    chdir: "{{ base_dir }}"  
+  ignore_errors: true    
+##- name: DOCKER COMPOSE UP
+- name: CONTAINER UP
+  shell: docker-compose up -d
+  args:
+    chdir: "{{ base_dir }}"  

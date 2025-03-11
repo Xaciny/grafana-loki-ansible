@@ -1,6 +1,12 @@
-grafana:
-  image: grafana:11.4.0
-  master_address: ip_master
+# DB MASTER
+slave_user: root
+slave_password: pi31nr5]poi13nti
+slave_db: grafana
+replication_user: replica_user
+replication_password: replica_password
 
-postgres:
-  image: postgres:15.0
+# DB STANDBY 
+master_ip: 192.168.1.64
+master_db: grafana_m
+master_user: root
+master_password: pi31nr5]poi13nti

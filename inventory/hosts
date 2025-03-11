@@ -1,3 +1,5 @@
 [grafana]
-grafana_master ansible_host=ip_master
-grafana_slave ansible_host=ip_slave
+#хост
+grafana01 ansible_host=192.168.1.64 
+#слэйв
+grafana02 ansible_host=192.168.1.237 

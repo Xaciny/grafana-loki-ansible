@@ -1,39 +1,70 @@
-x-common-extensions
-  &common
-  restart: unless-stopped
-  security_opt:
-    - no-new-privileges=true
-  cap_drop: ALL
+x-common-extensions: &common
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges=true
+    # cap_drop: 
+    #   - ALL
 
 services:
 
-{% if ansible_host == grafana.master_address %}
+{% if ansible_host == master_ip %}
   postgres:
     <<: *common
     container_name: postgres
     image: postgres:15
     environment:
-      POSTGRES_DB: my_grafana_db
-      POSTGRES_USER: my_grafana_user
-      POSTGRES_PASSWORD: my_grafana_pwd
+      POSTGRES_USER: {{ master_user }}
+      POSTGRES_PASSWORD: {{ master_password }}
+      POSTGRES_DB: {{ master_db }}
     ports:
-      - "5499:5432"
+      - "5432:5432"
     volumes:
-      - pg_grafana:/var/lib/postgresql/data
+      - ./psql/init_sql.conf:/docker-entrypoint-initdb.d/init_sql.conf
+    command:
+      - "postgres"
+    # cap_add:
+    #   - CHOWN
+    #   - SYS_ADMIN
+      
 {% else %} 
   postgres:
     <<: *common
     container_name: postgres
     image: postgres:15
     environment:
-      POSTGRES_DB: my_grafana_db
-      POSTGRES_USER: my_grafana_user
-      POSTGRES_PASSWORD: my_grafana_pwd
+      POSTGRES_USER: {{ slave_user }}
+      POSTGRES_PASSWORD: {{ slave_password }}
+      POSTGRES_DB: {{ slave_db }}
     ports:
-      - "5499:5432"
-    volumes:
-      - pg_grafana:/var/lib/postgresql/data
+      - "5432:5432"
+    command: >
+      postgres -D /var/lib/postgresql/data -c hot_standby=on -c primary_conninfo='host={{ master_ip }} port=5432 user={{ replication_user }} password={{ replication_password }}'
+    # cap_add:
+    #   - CHOWN
+    #   - SYS_ADMIN
 {% endif %}
+
+
+  loki:
+    <<: *common
+    container_name: loki
+    hostname: loki
+    image: grafana/loki:3.4
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/config:/etc/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+
+  # promtail:
+  #   <<: *common
+  #   image: grafana/promtail:2.3.0
+  #   container_name: promtail
+  #   volumes:
+  #     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  #     - ./promtail/config:/etc/promtail
+  #   command: -config.file=/etc/promtail/promtail-config.yml
+
 
   grafana:
     <<: *common
@@ -42,13 +73,30 @@ services:
     user: "0:0"
     environment:
       GF_DATABASE_TYPE: postgres
-      GF_DATABASE_HOST: pg_grafana:5432
-      GF_DATABASE_NAME: my_grafana_db
-      GF_DATABASE_USER: my_grafana_user
-      GF_DATABASE_PASSWORD: my_grafana_pwd
-      GF_DATABASE_SSL_MODE: disable
+      GF_DATABASE_HOST: {{ master_ip }}:5432
+      GF_DATABASE_NAME: {{ master_db }}
+      GF_DATABASE_USER: {{ master_user }}
+      GF_DATABASE_PASSWORD: {{ master_password }}
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      # TZ=${SYSTEM_TIMEZONE:-Europe/Moscow}
     ports:
-      - 3111:3000
+      - 80:3000
     volumes:
-      - grafana:/var/lib/grafana
+    - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
 
+  # nginx: 
+  #   <<: *common
+  #   container_name: nginx
+  #   image: nginx:latest
+  #   user: nginx
+  #   volumes: 
+  #     - "./nginx/http.d/nginx.conf:/etc/nginx/http.d/nginx.conf"   
+  #     - "./crt:/"
+  #     - "./key:/"
+  #   port:
+  #     - "443:443"
+
+networks:
+  default:
+    name: monitoring_network
+    driver: bridge
