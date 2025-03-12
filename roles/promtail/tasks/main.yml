@@ -1,0 +1,32 @@
+- name: VARS
+  set_fact:
+    promtail_config_dir: "/etc/promtail/"
+    promtail_bin_dir: "/usr/local/bin/"
+
+- name: Downlload promtail
+  shell: dnf install promtail -y
+
+- name: create DIRECTORIES
+  shell: mkdir -p {{item}} 
+  loop:
+    - "{{ promtail_config_dir }}"
+    - "{{ promtail_bin_dir }}"
+
+- name: COPY TEMPLATE CONFIG
+  template: 
+    src: "{{item}}.j2"
+    dest: "{{ promtail_config_dir }}{{item}}"
+    mode: 0644
+  loop: 
+    - "promtail-config.yaml"
+
+- name: Restart service
+  shell: systemctl restart promtail
+
+
+- name: Ensure Promtail is enabled and running
+  systemd:
+    name: promtail
+    state: started
+    enabled: yes
+    daemon_reload: yes

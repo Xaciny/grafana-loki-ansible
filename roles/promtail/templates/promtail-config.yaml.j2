@@ -3,7 +3,10 @@ server:
   grpc_listen_port: 0
 
 clients:
-  - url: http://loki:3100/loki/api/v1/push
+  - url: http://localhost:3100/loki/api/v1/push
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
 
 scrape_configs:
 - job_name: containers

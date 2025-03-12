@@ -4,3 +4,6 @@
     - include_role:
         name: grafana
         tasks_from: main.yml
+    - include_role:
+        name: promtail
+        tasks_from: main.yml

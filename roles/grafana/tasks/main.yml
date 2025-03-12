@@ -25,12 +25,12 @@
     - "loki/config/loki-config.yaml"
 ##- name: IF DOCKER RUN - DOCKER COMPOSE DOWN 
 - name: CONTAINER DOWN
-  command: docker-compose down
+  command: docker compose down
   args:
     chdir: "{{ base_dir }}"  
   ignore_errors: true    
 ##- name: DOCKER COMPOSE UP
 - name: CONTAINER UP
-  shell: docker-compose up -d
+  shell: docker compose up -d
   args:
     chdir: "{{ base_dir }}"  
