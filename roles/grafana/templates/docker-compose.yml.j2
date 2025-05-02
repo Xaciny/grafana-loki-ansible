@@ -56,16 +56,6 @@ services:
       - ./loki/config:/etc/loki
     command: -config.file=/etc/loki/loki-config.yaml
 
-  # promtail:
-  #   <<: *common
-  #   image: grafana/promtail:2.3.0
-  #   container_name: promtail
-  #   volumes:
-  #     - /var/lib/docker/containers:/var/lib/docker/containers:ro
-  #     - ./promtail/config:/etc/promtail
-  #   command: -config.file=/etc/promtail/promtail-config.yml
-
-
   grafana:
     <<: *common
     container_name: grafana
@@ -84,19 +74,16 @@ services:
     volumes:
     - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
 
-  # nginx: 
-  #   <<: *common
-  #   container_name: nginx
-  #   image: nginx:latest
-  #   user: nginx
-  #   volumes: 
-  #     - "./nginx/http.d/nginx.conf:/etc/nginx/http.d/nginx.conf"   
-  #     - "./crt:/"
-  #     - "./key:/"
-  #   port:
-  #     - "443:443"
-
-networks:
-  default:
-    name: monitoring_network
-    driver: bridge
+  nginx: 
+    <<: *common
+    container_name: nginx
+    image: nginx:1.25.2
+    user: "0:0"
+    entrypoint: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/http.d/nginx.conf"]
+    volumes: 
+      - "./nginx/http.d:/etc/nginx/http.d"   
+      - "./certs:/etc/nginx/crt"
+      - "./keys:/etc/nginx/key"
+    # command: nginx -c /etc/nginx/http.d/nginx.conf
+    ports:
+      - "443:443"

@@ -15,4 +15,27 @@ scrape_configs:
       - localhost
     labels:
       job: docker-logs
+      env: production
       __path__: /var/lib/docker/containers/*/*.log
+
+  pipeline_stages:
+    - docker: {}
+    - json:
+        expressions:
+          level: level
+          message: message
+          timestamp: time
+    - labels:
+        level: level
+        container_name: container_name
+    - timestamp:
+        source: timestamp
+        format: RFC3339
+
+- job_name: system-logs
+  static_configs:
+  - targets:
+      - localhost
+    labels:
+      job: system-logs
+      __path__: /var/log/syslog

@@ -3,16 +3,20 @@
   set_fact:
     base_dir: /opt/grafana/
 
-#- name: Delete GrafanaDir
-#  shell: rm -rf /opt/grafana/*
-#   run_once: true
-
+- name: Delete GrafanaDir
+  shell: rm -rf /opt/grafana/*
 
 ##- name: COPY REMOTE J2 CONFIG
 - name: CREATE DIRECTORIES
-  shell: mkdir -p /opt/grafana/pgsql && mkdir -p  /opt/grafana/loki/config
+  shell: mkdir -p {{item}}
   # run_once: true
   ignore_errors: true 
+  loop:
+    - "/opt/grafana/pgsql"
+    - "/opt/grafana/loki/config"
+    - "/opt/grafana/certs"
+    - "/opt/grafana/keys"
+    - "/opt/grafana/nginx/http.d"
 
 ##- name: TEST IF DOCKER RUN
 - name: COPY TEMPLATES
@@ -23,6 +27,10 @@
     - "docker-compose.yml"
     - "pgsql/init_sql.conf"
     - "loki/config/loki-config.yaml"
+    - "certs/certificate.crt"
+    - "keys/private.key"
+    - "nginx/http.d/nginx.conf"
+
 ##- name: IF DOCKER RUN - DOCKER COMPOSE DOWN 
 - name: CONTAINER DOWN
   command: docker compose down
