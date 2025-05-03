@@ -1,10 +1,15 @@
 - name: VARS
   set_fact:
-    promtail_config_dir: "/etc/promtail/"
+    promtail_config_dir: "/etc/loki/"
 
-- name: Downlload promtail
-  shell: dnf install promtail -y
-  run_once: true
+- name: Delete old config files
+  file:
+    path: "{{ promtail_config_dir }}promtail-config.yaml"
+    state: absent
+
+# - name: Downlload promtail
+#   shell: dnf install promtail -y
+#   run_once: true
 
 - name: create DIRECTORIES
   shell: mkdir -p {{item}} 
@@ -19,8 +24,21 @@
   loop: 
     - "promtail-config.yaml"
 
-- name: Restart service
-  shell: systemctl restart promtail
+- name: Install systemd service file
+  copy:
+    dest: /etc/systemd/system/promtail.service
+    content: |
+      [Unit]
+      Description=Promtail service
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/promtail -config.file={{ promtail_config_dir }}promtail-config.yaml
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
 
 - name: Ensure Promtail is enabled and running
   systemd:
@@ -28,3 +46,9 @@
     state: started
     enabled: yes
     daemon_reload: yes
+
+- name: Restart Promtail service
+  systemd:
+    name: promtail
+    state: restarted
+    enabled: yes

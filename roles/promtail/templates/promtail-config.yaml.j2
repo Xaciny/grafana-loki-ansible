@@ -1,6 +1,7 @@
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
+  log_level: debug
 
 clients:
   - url: http://localhost:3100/loki/api/v1/push
@@ -9,33 +10,20 @@ positions:
   filename: /var/lib/promtail/positions.yaml
 
 scrape_configs:
-- job_name: containers
-  static_configs:
-  - targets:
-      - localhost
-    labels:
-      job: docker-logs
-      env: production
-      __path__: /var/lib/docker/containers/*/*.log
+  - job_name: system-logs
+    static_configs:
+    - targets:
+        - localhost
+      labels:
+        job: system-logs
+        __path__: /var/log/syslog
 
-  pipeline_stages:
-    - docker: {}
-    - json:
-        expressions:
-          level: level
-          message: message
-          timestamp: time
-    - labels:
-        level: level
-        container_name: container_name
-    - timestamp:
-        source: timestamp
-        format: RFC3339
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
 
-- job_name: system-logs
-  static_configs:
-  - targets:
-      - localhost
-    labels:
-      job: system-logs
-      __path__: /var/log/syslog
